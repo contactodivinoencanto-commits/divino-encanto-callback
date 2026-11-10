@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; connect-src 'none'; img-src 'none'">
+<title>Divino Encanto · Autorización local</title>
+<style>body{font:16px system-ui;line-height:1.6;margin:5rem auto;max-width:42rem;padding:0 1rem}h1{font-size:1.5rem}input{display:block;width:100%;padding:.7rem;box-sizing:border-box}label{font-weight:bold}p.note{color:#555}button{padding:.5rem .9rem;margin:.5rem 0 1rem}</style>
+<script>
+// Copia los parámetros en memoria, retíralos enseguida de la barra del navegador;
+// la página NO hace llamadas salientes ni almacena datos.
+const p = new URLSearchParams(location.search);
+const grantCode = p.get('code') || '';
+const grantState = p.get('state') || '';
+const grantError = p.get('error') || '';
+history.replaceState(null, '', location.pathname);
+function show(){
+ const root = document.getElementById('result');
+ if (grantError || !grantCode || !grantState) {root.textContent = 'No se recibió una autorización válida. Vuelve a comenzar desde la Terminal.'; return;}
+ document.getElementById('fields').hidden = false;
+ document.getElementById('code').value = grantCode;
+ document.getElementById('state').value = grantState;
+ root.textContent = 'Autorización recibida. Copia los valores SOLO a tu Terminal. No compartas pantallas ni capturas de esta página.';
+}
+function copyField(id){ const el=document.getElementById(id); el.select(); navigator.clipboard.writeText(el.value).catch(()=>document.execCommand('copy')); }
+window.addEventListener('DOMContentLoaded',show);
+</script></head>
+<body><h1>Divino Encanto · Vinculación</h1><p id="result">Comprobando...</p>
+<div id="fields" hidden><label for="code">CODE</label><input id="code" type="password" readonly autocomplete="off"><button onclick="copyField('code')">Copiar CODE</button>
+<label for="state">STATE</label><input id="state" type="password" readonly autocomplete="off"><button onclick="copyField('state')">Copiar STATE</button>
+<p class="note">Pega primero CODE y luego STATE en Terminal. Cierra la página al terminar; no publiques el enlace ni copies su contenido a ningún chat.</p></div></body></html>
