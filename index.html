@@ -1,29 +1,65 @@
 <!doctype html>
-<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="referrer" content="no-referrer">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; connect-src 'none'; img-src 'none'">
-<title>Divino Encanto · Autorización local</title>
-<style>body{font:16px system-ui;line-height:1.6;margin:5rem auto;max-width:42rem;padding:0 1rem}h1{font-size:1.5rem}input{display:block;width:100%;padding:.7rem;box-sizing:border-box}label{font-weight:bold}p.note{color:#555}button{padding:.5rem .9rem;margin:.5rem 0 1rem}</style>
+<title>Divino Encanto · Vinculación</title>
+<style>
+ body{font:16px system-ui,-apple-system,sans-serif;line-height:1.55;max-width:42rem;margin:5rem auto;padding:0 1rem;color:#18212b}
+ h1{font-size:1.55rem} button{font:inherit;background:#1459c4;color:white;border:0;border-radius:.5rem;padding:.85rem 1.2rem;cursor:pointer}
+ button:disabled{opacity:.5;cursor:default}.info{color:#526070}.success{color:#116f3e}.error{color:#af1235}
+</style>
 <script>
-// Copia los parámetros en memoria, retíralos enseguida de la barra del navegador;
-// la página NO hace llamadas salientes ni almacena datos.
-const p = new URLSearchParams(location.search);
-const grantCode = p.get('code') || '';
-const grantState = p.get('state') || '';
-const grantError = p.get('error') || '';
+'use strict';
+const query = new URLSearchParams(location.search);
+const authorizationCode = query.get('code') || '';
+const authorizationState = query.get('state') || '';
+const authorizationError = query.get('error') || '';
 history.replaceState(null, '', location.pathname);
-function show(){
- const root = document.getElementById('result');
- if (grantError || !grantCode || !grantState) {root.textContent = 'No se recibió una autorización válida. Vuelve a comenzar desde la Terminal.'; return;}
- document.getElementById('fields').hidden = false;
- document.getElementById('code').value = grantCode;
- document.getElementById('state').value = grantState;
- root.textContent = 'Autorización recibida. Copia los valores SOLO a tu Terminal. No compartas pantallas ni capturas de esta página.';
+function setup(){
+  const status = document.getElementById('status');
+  const button = document.getElementById('copy');
+  if (authorizationError || !authorizationCode || !authorizationState){
+    status.className='error';
+    status.textContent='No se recibió una autorización válida. Inicia nuevamente desde Terminal.';
+    return;
+  }
+  status.textContent='Autorización recibida. Copia CODE y STATE juntos con el botón, y pégalos SOLO en la ventana privada de tu Mac.';
+  button.hidden=false;
 }
-function copyField(id){ const el=document.getElementById(id); el.select(); navigator.clipboard.writeText(el.value).catch(()=>document.execCommand('copy')); }
-window.addEventListener('DOMContentLoaded',show);
-</script></head>
-<body><h1>Divino Encanto · Vinculación</h1><p id="result">Comprobando...</p>
-<div id="fields" hidden><label for="code">CODE</label><input id="code" type="password" readonly autocomplete="off"><button onclick="copyField('code')">Copiar CODE</button>
-<label for="state">STATE</label><input id="state" type="password" readonly autocomplete="off"><button onclick="copyField('state')">Copiar STATE</button>
-<p class="note">Pega primero CODE y luego STATE en Terminal. Cierra la página al terminar; no publiques el enlace ni copies su contenido a ningún chat.</p></div></body></html>
+function fallbackCopy(text){
+  const t=document.createElement('textarea');
+  t.value=text;t.setAttribute('readonly','');t.style.position='fixed';t.style.left='-10000px';
+  document.body.appendChild(t);t.focus();t.select();
+  let ok=false;
+  try{ok=document.execCommand('copy');}catch(e){ok=false;}
+  t.remove();return ok;
+}
+async function copyAuthorization(){
+  const status=document.getElementById('status');
+  const payload=JSON.stringify({v:1,code:authorizationCode,state:authorizationState});
+  let success=false;
+  try{
+    if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(payload); success=true;}
+  }catch(e){success=false;}
+  if(!success){success=fallbackCopy(payload);}
+  if(success){
+    status.className='success';
+    status.textContent='COPIADO. Regresa a Terminal y pega UNA SOLA VEZ en la ventana privada. No compartas estos datos.';
+  }else{
+    status.className='error';
+    status.textContent='No se pudo copiar. Usa Safari o Chrome actualizado y vuelve a pulsar el botón. No continúes sin ver COPIADO.';
+  }
+}
+window.addEventListener('DOMContentLoaded',setup);
+</script>
+</head>
+<body>
+<h1>Divino Encanto · Vinculación segura v5.5</h1>
+<p id="status" class="info">Comprobando la autorización...</p>
+<button id="copy" hidden onclick="copyAuthorization()">Copiar autorización completa</button>
+<p class="info">Esta página solo se utiliza para el retorno de OAuth. No pegues el contenido del portapapeles en chats ni lo compartas con nadie.</p>
+</body>
+</html>
